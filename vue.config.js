@@ -1,3 +1,4 @@
 module.exports = {
-  'publicPath': "./TimeDisplay/dist/"
+  'publicPath': "./",
+  'productionSourceMap': false,
 }
