@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <router-view/>
+    <router-view v-if="isRouterAlive"></router-view>
   </div>
 </template>
 <script>
@@ -8,7 +8,21 @@ export default {
   name: 'App',
   data() {
     return {
-      appbgc: 'red'
+      appbgc: 'red',
+      isRouterAlive: true
+    }
+  },
+  provide () {
+    return {
+      reload: this.reload
+    }
+  },
+  methods: {
+    reload () {
+      this.isRouterAlive = false
+      this.$nextTick(function () {
+        this.isRouterAlive = true
+      })
     }
   }
 }
@@ -21,5 +35,10 @@ export default {
   -webkit-user-select: none;
   -moz-user-select: none;
   -o-user-select: none;
+}
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 </style>
