@@ -2,25 +2,25 @@
   <div class="home" oncontextmenu="return false" :style="{'background-color': appbgc}">
     <!-- 时间显示区域 -->
     <div class="times" @click="closeView()">
-      <div @mousedown="mdown" id="year" class="div-time year">
-        {{time.year.time}}年
+      <div @mousedown="mdown" id="year" :style="{top: time.year.top, left: time.year.left}" class="div-time year">
+        {{time.year.time + time.year.connector}}
       </div>
-      <div @mousedown="mdown" id="month" class="div-time month">
-        {{time.month.time}}月
+      <div @mousedown="mdown" id="month" :style="{top: time.month.top, left: time.month.left}" class="div-time month">
+        {{time.month.time + time.month.connector}}
       </div>
-      <div @mousedown="mdown" id="day" class="div-time day">
-        {{time.day.time}}日
+      <div @mousedown="mdown" id="day" :style="{top: time.day.top, left: time.day.left}" class="div-time day">
+        {{time.day.time + time.day.connector}}
       </div>
-      <div @mousedown="mdown" id="hour" class="div-time hour">
-        {{time.hour.time}}点
+      <div @mousedown="mdown" id="hour" :style="{top: time.hour.top, left: time.hour.left}" class="div-time hour">
+        {{time.hour.time + time.hour.connector}}
       </div>
-      <div @mousedown="mdown" id="minute" class="div-time minute">
-        {{time.minute.time}}分
+      <div @mousedown="mdown" id="minute" :style="{top: time.minute.top, left: time.minute.left}" class="div-time minute">
+        {{time.minute.time + time.minute.connector}}
       </div>
-      <div @mousedown="mdown" id="second" class="div-time second">
-        {{time.second.time}}秒
+      <div @mousedown="mdown" id="second" :style="{top: time.second.top, left: time.second.left}" class="div-time second">
+        {{time.second.time + time.second.connector}}
       </div>
-      <div @mousedown="mdown" id="week" class="div-time week">
+      <div @mousedown="mdown" id="week" :style="{top: time.week.top, left: time.week.left}" class="div-time week">
         {{time.week.time}}
       </div>
     </div>
@@ -38,25 +38,30 @@
       <template v-else>
         <div class="view-item" @click="setDefault">默认样式</div>
       </template>
-      <template v-if="setting">
+      <!-- <template v-if="setting">
         <div class="view-item" @click="settings">关闭设置</div>
       </template>
       <template v-else>
         <div class="view-item" @click="settings">设置</div>
+      </template> -->
+      <template v-if="!defaultCss">
+        <div class="view-item" @click="reset" style="color: red; font-weight: bold">重置位置</div>
       </template>
     </div>
-    <!-- <Set class="set" v-if="setting"></Set> -->
+    <Set class="set" v-if="setting" @click="closeView()"></Set>
   </div>
 </template>
 
 <script>
 import fd from 'freedate'
-// import Set from '@/components/Home/settings'
+import Set from '@/components/Home/settings'
+import { launchFullscreen, exitFullscreen } from '../utils/screen'
+import Storage from '../utils/estorage'
 export default {
   inject: ['reload'],
   name: 'Home',
   components: {
-    // Set
+    Set
   },
   data() {
     return {
@@ -65,43 +70,64 @@ export default {
         year: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '年',
+          top: '43vh',
+          left: '5vw'
         },
         month: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '月',
+          top: '43vh',
+          left: '22vw'
         },
         day: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '日',
+          top: '43vh',
+          left: '33vw'
         },
         hour: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '点',
+          top: '43vh',
+          left: '45vw'
         },
         minute: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '分',
+          top: '43vh',
+          left: '57vw'
         },
         second: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '秒',
+          top: '43vh',
+          left: '68vw'
         },
         week: {
           time: '',
           color: '',
-          fontsize: ''
+          fontsize: '',
+          connector: '',
+          top: '43vh',
+          left: '79vw'
+          // connector: ''
         }
       },
       timeRule: '',
       // 天气
       weather: {},
-      wi: 200,
       setting: false, //设置
       fullf: false,
       appbgc: '#000', //背景
@@ -111,17 +137,60 @@ export default {
       defaultCss: null
     }
   },
+  created() {
+    this.defaultCss = Storage.getItem('defaultCss')
+    this.fullf = Storage.getItem('fullf')
+    this.divs.forEach(v => {
+      this.time[v].left = Storage.getItem(`time_${v}_left`) ? Storage.getItem(`time_${v}_left`)+`px` : this.time[v].left
+      this.time[v].top = Storage.getItem(`time_${v}_top`) ? Storage.getItem(`time_${v}_top`)+`px` : this.time[v].top
+    })
+
+    // 阻止默认右键
+    document.addEventListener('mousedown', res => {
+      if(res.which !== 3) return
+      let doc = document.getElementsByClassName('set-view')[0]
+      doc.style.display = 'block'
+      doc.style.top = `${res.pageY}px`
+      doc.style.left = `${res.pageX}px`
+    })
+    document.addEventListener('keydown', res => {
+      if(res.code === 'Escape') {
+        this.fullf = false
+        this.closeView()
+      }
+    })
+    // 刷新时间
+    setInterval(() => {                                                      
+      this.time.year.time = fd.getDate('YY')
+      this.time.month.time = fd.getDate('MM')
+      this.time.day.time = fd.getDate('DD')
+      this.time.hour.time = fd.getDate('hh')
+      this.time.minute.time = fd.getDate('mm')
+      this.time.week.time = fd.getDate('W')
+      this.time.second.time = fd.getDate('ss')
+    }, 10)
+  },
+  mounted() {
+    this.appW = document.body.clientWidth + 'px'
+    this.appH = document.body.clientHeight + 'px'
+    if(!Storage.getItem('defaultCss')) {
+      const divs = this.divs
+      divs.forEach(v => {
+        document.getElementById(v).style.position = 'absolute'
+      })
+    }
+  },
   methods: {
     // 设置为默认位置
     setDefault() {
-      let defaultcss = !this.defaultCss
-      this.defaultCss = defaultcss
-      window.localStorage.setItem('defaultCss', JSON.stringify(defaultcss))
+      this.defaultCss = Storage.getItem('defaultCss')
+      console.log("default::", this.defaultCss)
+      Storage.setItem('defaultCss', !this.defaultCss)
       this.reload()
     },
     // 移动
     mdown(e) {
-      const div = e.target
+      const div = e.target, id = e.target.id
       let X = e.clientX - div.offsetLeft
       let Y = e.clientY - div.offsetTop
       document.onmousemove = (e) => {
@@ -131,6 +200,8 @@ export default {
         this.y = left
         div.style.left = left + 'px'
         div.style.top = top + 'px'
+        Storage.setItem(`time_${id}_left`, left)
+        Storage.setItem(`time_${id}_top`, top)
       }
       document.onmouseup = () => {
         document.onmousemove = null
@@ -144,87 +215,29 @@ export default {
     },
     // 关闭右键菜单
     closeView() {
-      let doc = document.getElementsByClassName('set-view')[0]
-      doc.style.display = 'none'
+      document.getElementsByClassName('set-view')[0].style.display = 'none'
     },
     // 点击全屏
     full() {
-      this.launchFullscreen(document.documentElement); // 整个网页
+      launchFullscreen(document.documentElement); // 整个网页
       this.fullf = true
+      Storage.setItem('fullf', true)
       this.closeView()
     },
     // 点击关闭全屏
     closeFull() {
-      // 退出全屏模式!
+      exitFullscreen();
       this.fullf = false
-      this.exitFullscreen();
+      Storage.setItem('fullf', false)
       this.closeView()
     },
-    // 全 判断各种浏览器，找到正确的方法
-    launchFullscreen(element) {
-      if(element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if(element.mozRequestFullScreen) {
-        element.mozRequestFullScreen();
-      } else if(element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen();
-      } else if(element.msRequestFullscreen) {
-        element.msRequestFullscreen();
-      }
-    },
-    // 退全 判断浏览器种类
-    exitFullscreen() {
-      if(document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if(document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if(document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
-    }
-  },
-  created() {
-    let d = window.localStorage.getItem('defaultCss')
-    console.log(d)
-    let defaultcss = d === 'false'? false:true
-    if(defaultcss) {
-      window.localStorage.setItem('defaultCss', JSON.stringify(defaultcss))
-      this.defaultCss = defaultcss
-    }
-    // 阻止默认右键
-    document.addEventListener('mousedown', res => {
-      if(res.which !== 3) return
-      let doc = document.getElementsByClassName('set-view')[0]
-      // console.log(res.pageX, res.pageY)
-      doc.style.display = 'block'
-      doc.style.top = `${res.pageY}px`
-      doc.style.left = `${res.pageX}px`
-    })
-    document.addEventListener('keydown', res => {
-      if(res.code === 'Escape') {
-        this.fullf = false
-        this.closeView()
-      }
-    })
-    // 刷新时间
-    setInterval(() => {
-      this.time.year.time = fd.getDate('YY')
-      this.time.month.time = fd.getDate('MM')
-      this.time.day.time = fd.getDate('DD')
-      this.time.hour.time = fd.getDate('hh')
-      this.time.minute.time = fd.getDate('mm')
-      this.time.week.time = fd.getDate('W')
-      this.time.second.time = fd.getDate('ss')
-    }, 10)
-  },
-  mounted() {
-    let s = window.localStorage.getItem('defaultCss') === "true" ? true : false
-    console.log(s)
-    if(!s) {
-      const divs = this.divs
-      divs.forEach(v => {
-        document.getElementById(v).style.position = 'absolute'
+    // 重置位置
+    reset() {
+      this.divs.forEach(v => {
+        Storage.removeItem(`time_${v}_left`)
+        Storage.removeItem(`time_${v}_top`)
       })
+      this.reload()
     }
   }
 }
@@ -245,40 +258,15 @@ export default {
 }
 .div-time {
   color: #fff;
-  font-size: 5vw;
+  font-size: 4.8vw;
 }
 .div-time:hover {
   cursor: pointer;
 }
 
 /* 时间 */
-.year {
-  top: 40vh;
-  left: 5vw;
-}
-.month {
-  top: 40vh;
-  left: 22vw;
-}
-.day {
-  top: 40vh;
-  left: 33vw;
-}
-.hour {
-  top: 40vh;
-  left: 45vw;
-}
-.minute {
-  top: 40vh;
-  left: 57vw;
-}
-.second {
-  top: 40vh;
-  left: 68vw;
-}
-.week {
-  top: 40vh;
-  left: 79vw;
+.year, .month, .day, .hour, .minute, .second, .week {
+  margin: 5.5px;
 }
 .set-view {
   padding: 5px 0;

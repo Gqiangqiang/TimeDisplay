@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" style="background-color: #000;">
     <router-view v-if="isRouterAlive"></router-view>
   </div>
 </template>
@@ -9,7 +9,7 @@ export default {
   data() {
     return {
       appbgc: 'red',
-      isRouterAlive: true
+      isRouterAlive: true,
     }
   },
   provide () {
@@ -37,8 +37,6 @@ export default {
   -o-user-select: none;
 }
 #app {
-  height: 100%;
-  width: 100%;
   overflow: hidden;
 }
 </style>
